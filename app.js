@@ -2,6 +2,7 @@
 var State = function() {
   this.tasteIndex = 0;
   this.allTastes = [];
+  this.pantry = [];
 };
 
 //1. initialize the new state object (instance of the State class)
@@ -15,24 +16,22 @@ var Taste = function(ingredients, taste) {
 };
 
 // State prototype: adds a Taste object to the State.allTastes array 
-State.prototype.addTasteToAllTastesArray = function(ingredients, taste) {
+State.prototype.pushTasteToState = function(ingredients, taste) {
   this.allTastes.push(new Taste(ingredients, taste));
+  this.pantry = this.pantry.concat(ingredients);
 }
 
-State.prototype.returnTasteAtIndex = function(index) {
-  return this.allTastes[index].taste;
-}
-
+// Change the state of the preferred taste variable to true
 Taste.prototype.makePreferredTasteTrue = function() {
   this.preferredTaste = true;
 }
 
 //2. push the new Taste objects to the state object
-state.addTasteToAllTastesArray(['Glug of rum, slug of whisky, splash of gin'], 'strong');
-state.addTasteToAllTastesArray(['Olive on a stick, salt-dusted rim, rasher of bacon'], 'salty');
-state.addTasteToAllTastesArray(['Shake of bitters, splash of tonic, twist of lemon peel'], 'bitter');
-state.addTasteToAllTastesArray(['Sugar cube, spoonful of honey, splash of cola'], 'sweet');
-state.addTasteToAllTastesArray(['Slice of orange, dash of cassis, cherry on top'], 'fruity');
+state.pushTasteToState(['Glug of rum', 'slug of whisky', 'splash of gin'], 'strong');
+state.pushTasteToState(['Olive on a stick', 'salt-dusted rim', 'rasher of bacon'], 'salty');
+state.pushTasteToState(['Shake of bitters', 'splash of tonic', 'twist of lemon peel'], 'bitter');
+state.pushTasteToState(['Sugar cube', 'spoonful of honey', 'splash of cola'], 'sweet');
+state.pushTasteToState(['Slice of orange', 'dash of cassis', 'cherry on top'], 'fruity');
 
 // Bartender Class: defines the characteristics of a bartender object
 var Bartender = function(questions) {
@@ -47,9 +46,29 @@ Bartender.prototype.askQuestion = function() {
    return this.questions[Math.floor(Math.random()*this.questions.length)]
 };
 
+Bartender.prototype.createDrink = function(state, numberOfIngredients) {
+  //check to make sure at least one preference has been selected
+  var newRecipe = [];
+
+  if (state.allTastes.every(function(element) {
+    return !(element.preferredTaste)
+  })) {
+    return "Please select at least one taste preference!"
+  }
+  else {
+    while (newRecipe.length < numberOfIngredients) {
+      var index = Math.floor(Math.random()*state.allTastes.length)
+      if (state.allTastes[index].preferredTaste) {
+        newRecipe.push(state.allTastes[index].ingredients[Math.floor(Math.random()*state.allTastes[index].ingredients.length)])
+      }
+    }  
+  }
+  return newRecipe
+};
+
 //Load page with the first question
 $(document).ready(function() {
-  $('.js-question').text(ourBartender.askQuestion()+" "+state.returnTasteAtIndex(state.tasteIndex))
+  $('.js-question').text(ourBartender.askQuestion()+" "+state.allTastes[state.tasteIndex].taste)
 })
 
 
@@ -60,11 +79,11 @@ $('.js-submit').on('click', function(){
 
   if(state.tasteIndex < state.allTastes.length - 1 ) { 
         state.tasteIndex +=1;    
-        $('.js-question').text(ourBartender.askQuestion()+" "+state.returnTasteAtIndex(state.tasteIndex));
+        $('.js-question').text(ourBartender.askQuestion()+" "+state.allTastes[state.tasteIndex].taste);
       }
 
   else {
-    $('.js-question').text('done');
+    $('.js-question').text("Your drink is: "+ourBartender.createDrink(state,4));
     $('.js-submit').hide();
       }
 });
